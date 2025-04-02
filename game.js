@@ -1,14 +1,13 @@
-// --- Basic 2048 Game Logic with Smooth Sliding Tiles ---
 const gridSize = 4;
-const tileSize = 100; // Each tile is 100px
-const gap = 15;       // Gap between tiles is 15px
-const containerSize = 500; // Container is 500px square
-const totalGridSize = (gridSize * tileSize) + ((gridSize - 1) * gap); // 445px
-const offset = (containerSize - totalGridSize) / 2; // ~27.5px
+const tileSize = 100;
+const gap = 15;
+const containerSize = 500;
+const totalGridSize = (gridSize * tileSize) + ((gridSize - 1) * gap);
+const offset = (containerSize - totalGridSize) / 2;
 
-let grid = [];           // 2D array holding numbers (0 means empty)
+let grid = [];
 let score = 0;
-const tileElements = {}; // Object keyed by "i-j" to hold tile DOM elements
+const tileElements = {};
 
 const gridContainer = document.getElementById('grid-container');
 const scoreDisplay = document.getElementById('score');
@@ -33,21 +32,17 @@ function updateTiles() {
       const leftPos = offset + j * (tileSize + gap);
       if (value !== 0) {
         if (tileElements[key]) {
-          // Update existing tile's content and then force a reflow to trigger the transition.
           const tileElem = tileElements[key];
           tileElem.textContent = value;
           tileElem.className = `tile tile-${value}`;
-          // Force a repaint in the next frame before updating the position.
           requestAnimationFrame(() => {
             tileElem.style.top = `${topPos}px`;
             tileElem.style.left = `${leftPos}px`;
           });
         } else {
-          // Create a new tile element and set its position.
           const tileElem = document.createElement('div');
           tileElem.className = `tile tile-${value}`;
           tileElem.textContent = value;
-          // Set initial position
           tileElem.style.top = `${topPos}px`;
           tileElem.style.left = `${leftPos}px`;
           gridContainer.appendChild(tileElem);
@@ -187,7 +182,6 @@ function handleKey(e) {
 }
 
 function newGame() {
-  // Remove existing tile elements
   for (const key in tileElements) {
     tileElements[key].remove();
   }
@@ -204,72 +198,73 @@ function newGame() {
 document.addEventListener('keydown', handleKey);
 document.getElementById('newGame').addEventListener('click', newGame);
 newGame();
+
 const contractABI = [
-    "function submitScore(uint256 score) public",
-    "function highScores(address) public view returns (uint256)"
-  ];
-  const contractAddress = "0x953BF8eB530Ae3c62b7EC2E9fd0831B41E3ED4F2";
+  "function submitScore(uint256 score) public",
+  "function highScores(address) public view returns (uint256)"
+];
+const contractAddress = "0x953BF8eB530Ae3c62b7EC2E9fd0831B41E3ED4F2";
+
+document.getElementById('submitScore').addEventListener('click', async () => {
+  if (typeof window.ethereum === 'undefined') {
+    alert("MetaMask is not installed.");
+    return;
+  }
   
-  document.getElementById('submitScore').addEventListener('click', async () => {
-    if (typeof window.ethereum === 'undefined') {
-      alert("MetaMask is not installed.");
-      return;
+  try {
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    let provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
+    console.log("Current network:", network);
+    
+    const monadTestnetChainIdDecimal = 10143;
+    const monadTestnetChainIdHex = '0x' + monadTestnetChainIdDecimal.toString(16);
+    console.log("Expected Monad Testnet chainId (hex):", monadTestnetChainIdHex);
+    
+    if (network.chainId !== monadTestnetChainIdDecimal) {
+      console.log("Switching network...");
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: monadTestnetChainIdHex }],
+        });
+        console.log("Network switched successfully.");
+      } catch (switchError) {
+        console.error("Error switching network:", switchError);
+        if (switchError.code === 4902) {
+          console.log("Adding network to MetaMask...");
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: monadTestnetChainIdHex,
+              chainName: 'Monad Testnet',
+              rpcUrls: ['https://testnet-rpc.monad.xyz'],
+              nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+              blockExplorerUrls: ['https://testnet.monadexplorer.com'],
+            }],
+          });
+          console.log("Network added, please try again.");
+          return;
+        } else {
+          alert("Failed to switch network. Check console for details.");
+          return;
+        }
+      }
+      provider = new ethers.BrowserProvider(window.ethereum);
+    } else {
+      console.log("Already on the Monad Testnet.");
     }
     
-    try {
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      let provider = new ethers.BrowserProvider(window.ethereum);
-      const network = await provider.getNetwork();
-      console.log("Current network:", network);
-      
-      const monadTestnetChainIdDecimal = 10143;
-      const monadTestnetChainIdHex = '0x' + monadTestnetChainIdDecimal.toString(16);
-      console.log("Expected Monad Testnet chainId (hex):", monadTestnetChainIdHex);
-      
-      if (network.chainId !== monadTestnetChainIdDecimal) {
-        console.log("Switching network...");
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: monadTestnetChainIdHex }],
-          });
-          console.log("Network switched successfully.");
-        } catch (switchError) {
-          console.error("Error switching network:", switchError);
-          if (switchError.code === 4902) {
-            console.log("Adding network to MetaMask...");
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: monadTestnetChainIdHex,
-                chainName: 'Monad Testnet',
-                rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-                blockExplorerUrls: ['https://testnet.monadexplorer.com'],
-              }],
-            });
-            console.log("Network added, please try again.");
-            return;
-          } else {
-            alert("Failed to switch network. Check console for details.");
-            return;
-          }
-        }
-        provider = new ethers.BrowserProvider(window.ethereum);
-      } else {
-        console.log("Already on the Monad Testnet.");
-      }
-      
-      const signer = await provider.getSigner();
-      const gameContract = new ethers.Contract(contractAddress, contractABI, signer);
-      
-      console.log("Submitting score:", score);
-      const tx = await gameContract.submitScore(score);
-      console.log("Transaction sent, hash:", tx.hash);
-      await tx.wait();
-      alert(`Score of ${score} submitted to the Monad Testnet!`);
-    } catch (error) {
-      console.error("Error submitting score:", error);
-      alert("Error submitting score. Check the console for details.");
-    }
-  });
+    const signer = await provider.getSigner();
+    const gameContract = new ethers.Contract(contractAddress, contractABI, signer);
+    
+    console.log("Submitting score:", score);
+    const tx = await gameContract.submitScore(score);
+    console.log("Transaction sent, hash:", tx.hash);
+    await tx.wait();
+    alert(`Score of ${score} submitted to the Monad Testnet!`);
+  } catch (error) {
+    console.error("Error submitting score:", error);
+    alert("Error submitting score. Check the console for details.");
+  }
+});
