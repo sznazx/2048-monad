@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2048 Game</title>
+  <!-- Import Clear Sans for the classic 2048 look -->
+  <link href="https://fonts.googleapis.com/css2?family=Clear+Sans&display=swap" rel="stylesheet">
+  <style>
+    /* Global Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #faf8ef;
+      font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #776e65;
+    }
+    h1 {
+      font-size: 80px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    /* Scoreboard & Buttons */
+    .score-board {
+      width: 500px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .score {
+      background: #bbada0;
+      padding: 10px 20px;
+      border-radius: 3px;
+      color: #fff;
+      font-size: 24px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 3px;
+      background: #8f7a66;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #776e65;
+    }
+    /* Container for the grid */
+    .container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      background: #bbada0;
+      border-radius: 6px;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+    /* Grid layout:
+         Each tile is 100px; gap: 15px.
+         Total grid width = 4*100 + 3*15 = 445px.
+         Offset = (500 - 445)/2 ≈ 27.5px.
+    */
+    .grid-cell {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: #cdc1b4;
+      border-radius: 3px;
+    }
+    .cell-0-0 { top: 27.5px; left: 27.5px; }
+    .cell-0-1 { top: 27.5px; left: 142.5px; }
+    .cell-0-2 { top: 27.5px; left: 257.5px; }
+    .cell-0-3 { top: 27.5px; left: 372.5px; }
+    .cell-1-0 { top: 142.5px; left: 27.5px; }
+    .cell-1-1 { top: 142.5px; left: 142.5px; }
+    .cell-1-2 { top: 142.5px; left: 257.5px; }
+    .cell-1-3 { top: 142.5px; left: 372.5px; }
+    .cell-2-0 { top: 257.5px; left: 27.5px; }
+    .cell-2-1 { top: 257.5px; left: 142.5px; }
+    .cell-2-2 { top: 257.5px; left: 257.5px; }
+    .cell-2-3 { top: 257.5px; left: 372.5px; }
+    .cell-3-0 { top: 372.5px; left: 27.5px; }
+    .cell-3-1 { top: 372.5px; left: 142.5px; }
+    .cell-3-2 { top: 372.5px; left: 257.5px; }
+    .cell-3-3 { top: 372.5px; left: 372.5px; }
+    /* Tile styling: square tiles with border-radius 8 and smooth slide */
+    .tile {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: #eee4da;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 55px;
+      font-weight: bold;
+      color: #776e65;
+      /* Transition set to 0.5s */
+      transition: top 0.5s ease, left 0.5s ease;
+    }
+    .tile span {
+      display: block;
+    }
+    /* Classic 2048 tile colors */
+    .tile-2   { background: #eee4da; }
+    .tile-4   { background: #ede0c8; }
+    .tile-8   { background: #f2b179; color: #f9f6f2; }
+    .tile-16  { background: #f59563; color: #f9f6f2; }
+    .tile-32  { background: #f67c5f; color: #f9f6f2; }
+    .tile-64  { background: #f65e3b; color: #f9f6f2; }
+    .tile-128 { background: #edcf72; color: #f9f6f2; }
+    .tile-256 { background: #edcc61; color: #f9f6f2; }
+    .tile-512 { background: #edc850; color: #f9f6f2; }
+    .tile-1024 { background: #edc53f; color: #f9f6f2; }
+    .tile-2048 { background: #edc22e; color: #f9f6f2; }
+  </style>
+</head>
+<body>
+  <h1>2048</h1>
+  <div class="score-board">
+    <div class="score" id="score">Score: 0</div>
+    <button id="newGame">New Game</button>
+  </div>
+  <div class="container" id="grid-container">
+    <!-- Background grid cells -->
+    <div class="grid-cell cell-0-0"></div>
+    <div class="grid-cell cell-0-1"></div>
+    <div class="grid-cell cell-0-2"></div>
+    <div class="grid-cell cell-0-3"></div>
+    <div class="grid-cell cell-1-0"></div>
+    <div class="grid-cell cell-1-1"></div>
+    <div class="grid-cell cell-1-2"></div>
+    <div class="grid-cell cell-1-3"></div>
+    <div class="grid-cell cell-2-0"></div>
+    <div class="grid-cell cell-2-1"></div>
+    <div class="grid-cell cell-2-2"></div>
+    <div class="grid-cell cell-2-3"></div>
+    <div class="grid-cell cell-3-0"></div>
+    <div class="grid-cell cell-3-1"></div>
+    <div class="grid-cell cell-3-2"></div>
+    <div class="grid-cell cell-3-3"></div>
+  </div>
+  <br>
+  <button id="submitScore">Submit Score to Blockchain</button>
+  
+  <!-- Ethers.js for blockchain integration (if needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.umd.min.js"></script>
+  <!-- Game logic script -->
+  <script src="game.js"></script>
+</body>
+</html>
